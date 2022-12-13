@@ -20,7 +20,7 @@ pub struct File {
 
 impl File {
     /// Wrapper for [`tokio::fs::File::open`].
-    pub async fn open(path: impl Into<PathBuf>) -> io::Result<File> {
+    pub async fn open(path: impl AsRef<Path>) -> io::Result<File> {
         let path = path.into();
         let f = TokioFile::open(&path)
             .await
@@ -29,7 +29,7 @@ impl File {
     }
 
     /// Wrapper for [`tokio::fs::File::create`].
-    pub async fn create(path: impl Into<PathBuf>) -> io::Result<File> {
+    pub async fn create(path: impl AsRef<Path>) -> io::Result<File> {
         let path = path.into();
         match TokioFile::create(&path).await {
             Ok(f) => Ok(File::from_parts(f, path)),
@@ -111,7 +111,7 @@ impl File {
     /// Creates a [`File`](struct.File.html) from a raw file and its path.
     pub fn from_parts<P>(file: TokioFile, path: P) -> Self
     where
-        P: Into<PathBuf>,
+        P: AsRef<Path>,
     {
         File {
             tokio: file,

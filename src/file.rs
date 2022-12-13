@@ -17,12 +17,12 @@ pub struct File {
 
 // Opens a std File and returns it or an error generator which only needs the path to produce the error.
 // Exists for the `crate::read*` functions so they don't unconditionally build a PathBuf.
-pub(crate) fn open(path: &Path) -> Result<std::fs::File, impl FnOnce(PathBuf) -> io::Error> {
+pub(crate) fn open<P: AsRef<Path>>(path: P) -> Result<std::fs::File, impl FnOnce(PathBuf) -> io::Error> {
     fs::File::open(path).map_err(|err| |path| Error::build(err, ErrorKind::OpenFile, path))
 }
 
 // like `open()` but for `crate::write`
-pub(crate) fn create(path: &Path) -> Result<std::fs::File, impl FnOnce(PathBuf) -> io::Error> {
+pub(crate) fn create<P: AsRef<Path>>(path: P) -> Result<std::fs::File, impl FnOnce(PathBuf) -> io::Error> {
     fs::File::create(path).map_err(|err| |path| Error::build(err, ErrorKind::CreateFile, path))
 }
 
@@ -33,24 +33,22 @@ impl File {
     /// Wrapper for [`File::open`](https://doc.rust-lang.org/stable/std/fs/struct.File.html#method.open).
     pub fn open<P>(path: P) -> Result<Self, io::Error>
     where
-        P: Into<PathBuf>,
+        P: AsRef<Path>,
     {
-        let path = path.into();
         match open(&path) {
-            Ok(file) => Ok(File::from_parts(file, path)),
-            Err(err_gen) => Err(err_gen(path)),
+            Ok(file) => Ok(File::from_parts(file, &path)),
+            Err(err_gen) => Err(err_gen(path.as_ref().to_path_buf())),
         }
     }
 
     /// Wrapper for [`File::create`](https://doc.rust-lang.org/stable/std/fs/struct.File.html#method.create).
     pub fn create<P>(path: P) -> Result<Self, io::Error>
     where
-        P: Into<PathBuf>,
+        P: AsRef<Path>,
     {
-        let path = path.into();
         match create(&path) {
-            Ok(file) => Ok(File::from_parts(file, path)),
-            Err(err_gen) => Err(err_gen(path)),
+            Ok(file) => Ok(File::from_parts(file, &path)),
+            Err(err_gen) => Err(err_gen(path.as_ref().to_path_buf())),
         }
     }
 
@@ -61,12 +59,11 @@ impl File {
     #[deprecated = "use fs_err::OpenOptions::open instead"]
     pub fn from_options<P>(path: P, options: &fs::OpenOptions) -> Result<Self, io::Error>
     where
-        P: Into<PathBuf>,
+        P: AsRef<Path>,
     {
-        let path = path.into();
         match options.open(&path) {
             Ok(file) => Ok(File::from_parts(file, path)),
-            Err(source) => Err(Error::build(source, ErrorKind::OpenFile, path)),
+            Err(source) => Err(Error::build(source, ErrorKind::OpenFile, path.as_ref())),
         }
     }
 
@@ -125,11 +122,11 @@ impl File {
     /// Creates a [`File`](struct.File.html) from a raw file and its path.
     pub fn from_parts<P>(file: fs::File, path: P) -> Self
     where
-        P: Into<PathBuf>,
+        P: AsRef<Path>,
     {
         File {
             file,
-            path: path.into(),
+            path: path.as_ref().to_path_buf(),
         }
     }
 

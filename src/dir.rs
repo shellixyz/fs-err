@@ -1,17 +1,16 @@
 use std::ffi::OsString;
 use std::fs;
 use std::io;
+use std::path::Path;
 use std::path::PathBuf;
 
 use crate::errors::{Error, ErrorKind};
 
 /// Wrapper for [`fs::read_dir`](https://doc.rust-lang.org/stable/std/fs/fn.read_dir.html).
-pub fn read_dir<P: Into<PathBuf>>(path: P) -> io::Result<ReadDir> {
-    let path = path.into();
-
+pub fn read_dir<P: AsRef<Path>>(path: P) -> io::Result<ReadDir> {
     match fs::read_dir(&path) {
-        Ok(inner) => Ok(ReadDir { inner, path }),
-        Err(source) => Err(Error::build(source, ErrorKind::ReadDir, path)),
+        Ok(inner) => Ok(ReadDir { inner, path: path.as_ref().to_path_buf() }),
+        Err(source) => Err(Error::build(source, ErrorKind::ReadDir, path.as_ref().to_path_buf())),
     }
 }
 
