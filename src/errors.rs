@@ -94,7 +94,10 @@ impl fmt::Display for Error {
             ReadAt => write!(formatter, "failed to read with offset from `{}`", path),
             #[cfg(unix)]
             WriteAt => write!(formatter, "failed to write with offset to `{}`", path),
-        }
+        }?;
+
+        formatter.write_str(": ")?;
+        formatter.write_str(&self.source.to_string())
     }
 }
 
