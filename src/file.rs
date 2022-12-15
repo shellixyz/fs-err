@@ -3,6 +3,9 @@ use std::io::{self, Read, Seek, Write};
 use std::ops::{Deref, DerefMut};
 use std::path::{Path, PathBuf};
 
+#[cfg(feature = "close")]
+use close_err::Closable;
+
 use crate::errors::{Error, ErrorKind};
 
 /// Wrapper around [`std::fs::File`][std::fs::File] which adds more helpful
@@ -111,6 +114,14 @@ impl File {
         self.file
             .set_permissions(perm)
             .map_err(|source| self.error(source, ErrorKind::SetPermissions))
+    }
+
+    #[cfg(feature = "close")]
+    /// Wrapper for [`close_err::Closable::close`](https://docs.rs/close-err/latest/close_err/trait.Closable.html#tymethod.close).
+    pub fn close(self) -> io::Result<()> {
+        let path = self.path;
+        self.file.close()
+            .map_err(|source| Error::build(source, ErrorKind::Close, path))
     }
 }
 

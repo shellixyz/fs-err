@@ -33,6 +33,9 @@ pub(crate) enum ErrorKind {
     ReadAt,
     #[cfg(unix)]
     WriteAt,
+
+    #[cfg(feature = "close")]
+    Close,
 }
 
 /// Contains an IO error that has a file path attached.
@@ -94,6 +97,9 @@ impl fmt::Display for Error {
             ReadAt => write!(formatter, "failed to read with offset from `{}`", path),
             #[cfg(unix)]
             WriteAt => write!(formatter, "failed to write with offset to `{}`", path),
+
+            #[cfg(feature = "close")]
+            Close => write!(formatter, "failed to close file `{}`", path),
         }?;
 
         formatter.write_str(": ")?;
